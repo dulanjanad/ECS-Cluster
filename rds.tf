@@ -4,7 +4,8 @@ resource "aws_db_subnet_group" "rds-subnet-group" {
   subnet_ids = [module.vpc.private_subnets[0], module.vpc.private_subnets[1]]
 
   tags = {
-    Name = "My DB subnet group"
+    Name = "rds-${lower(var.vpc_name)}-subnet-group"
+    Environment = var.environment
   }
 }
 
@@ -44,6 +45,8 @@ module "aurora" {
 
   apply_immediately   = true
   skip_final_snapshot = true
+
+  database_name = var.db_name
 
   create_db_cluster_parameter_group      = true
   db_cluster_parameter_group_name        = "${var.app_name}-rds-cluster-parameter-group"
