@@ -25,6 +25,7 @@ module "aurora" {
   engine_version = var.engine_version
   instances = {
     1 = {
+      identifier = "${var.app_name}-rds-instance"
       instance_class      = var.instance_class
       publicly_accessible = false
     }
