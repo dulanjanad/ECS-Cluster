@@ -12,19 +12,15 @@ app_containerPort = 8080
 
 db_name = "demo"
 
-engine = "mysql"
+engine = "aurora-mysql"
 
-engine_version = "8.0.27"
+engine_version = "5.7"
 
-family = "mysql8.0" # DB parameter group
+family = "aurora-mysql5.7" # DB parameter group
 
 major_engine_version = "8.0" # DB option group
 
 instance_class = "db.t2.small"
-
-allocated_storage = 20
-
-max_allocated_storage = 100
 
 port = 3306
 

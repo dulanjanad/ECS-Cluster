@@ -6,44 +6,78 @@ output "repository-url" {
   value = aws_ecr_repository.aws-ecr.repository_url
 }
 
-output "db_instance_address" {
-  description = "The address of the RDS instance"
-  value       = module.master.db_instance_address
-}
-
-output "db_instance_availability_zone" {
-  description = "The availability zone of the RDS instance"
-  value       = module.master.db_instance_availability_zone
-}
-
-output "db_instance_endpoint" {
-  description = "The connection endpoint"
-  value       = module.master.db_instance_endpoint
-}
-
-output "db_instance_id" {
-  description = "The RDS instance ID"
-  value       = module.master.db_instance_id
-}
-
-output "db_instance_username" {
-  description = "The master username for the database"
-  value       = module.master.db_instance_username
-  sensitive   = true
-}
-
-output "db_instance_password" {
-  description = "The database password (this password may be old, because Terraform doesn't track it after initial creation)"
-  value       = module.master.db_instance_password
-  sensitive   = true
-}
-
-output "db_subnet_group_id" {
+# aws_db_subnet_group
+output "db_subnet_group_name" {
   description = "The db subnet group name"
-  value       = module.master.db_subnet_group_id
+  value       = module.aurora.db_subnet_group_name
 }
 
-output "db_parameter_group_id" {
-  description = "The db parameter group id"
-  value       = module.master.db_parameter_group_id
+# aws_rds_cluster
+output "cluster_arn" {
+  description = "Amazon Resource Name (ARN) of cluster"
+  value       = module.aurora.cluster_arn
+}
+
+output "cluster_id" {
+  description = "The RDS Cluster Identifier"
+  value       = module.aurora.cluster_id
+}
+
+output "cluster_resource_id" {
+  description = "The RDS Cluster Resource ID"
+  value       = module.aurora.cluster_resource_id
+}
+
+output "cluster_members" {
+  description = "List of RDS Instances that are a part of this cluster"
+  value       = module.aurora.cluster_members
+}
+
+output "cluster_endpoint" {
+  description = "Writer endpoint for the cluster"
+  value       = module.aurora.cluster_endpoint
+}
+
+output "cluster_reader_endpoint" {
+  description = "A read-only endpoint for the cluster, automatically load-balanced across replicas"
+  value       = module.aurora.cluster_reader_endpoint
+}
+
+output "cluster_engine_version_actual" {
+  description = "The running version of the cluster database"
+  value       = module.aurora.cluster_engine_version_actual
+}
+
+# database_name is not set on `aws_rds_cluster` resource if it was not specified, so can't be used in output
+output "cluster_database_name" {
+  description = "Name for an automatically created database on cluster creation"
+  value       = module.aurora.cluster_database_name
+}
+
+output "cluster_port" {
+  description = "The database port"
+  value       = module.aurora.cluster_port
+}
+
+output "cluster_master_password" {
+  description = "The database master password"
+  value       = module.aurora.cluster_master_password
+  sensitive   = true
+}
+
+output "cluster_master_username" {
+  description = "The database master username"
+  value       = module.aurora.cluster_master_username
+  sensitive   = true
+}
+
+output "cluster_hosted_zone_id" {
+  description = "The Route53 Hosted Zone ID of the endpoint"
+  value       = module.aurora.cluster_hosted_zone_id
+}
+
+# aws_rds_cluster_instances
+output "cluster_instances" {
+  description = "A map of cluster instances and their attributes"
+  value       = module.aurora.cluster_instances
 }

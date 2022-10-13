@@ -58,16 +58,6 @@ variable "instance_class" {
   description = "Instance Class"
 }
 
-variable "allocated_storage" {
-  type        = string
-  description = "Allocated storage for database"
-}
-
-variable "max_allocated_storage" {
-  type        = string
-  description = "Max allocated storage for database"
-}
-
 variable "port" {
   type        = number
   description = "Database port"

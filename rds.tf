@@ -8,79 +8,132 @@ resource "aws_db_subnet_group" "rds-subnet-group" {
   }
 }
 
-module "master" {
-  source  = "terraform-aws-modules/rds/aws"
-  version = "5.1.0"
+resource "random_password" "master" {
 
-  identifier = "${var.app_name}-rds-master"
+  length = 10
 
-  engine               = var.engine
-  engine_version       = var.engine_version
-  family               = var.family
-  major_engine_version = var.major_engine_version
-  instance_class       = var.instance_class
-
-  allocated_storage     = var.allocated_storage
-  max_allocated_storage = var.max_allocated_storage
-
-  db_name  = var.db_name
-  username = var.db_username
-  port     = var.port
-
-  multi_az               = true
-  db_subnet_group_name   = aws_db_subnet_group.rds-subnet-group.name
-  vpc_security_group_ids = [aws_security_group.rds_security_group.id]
-
-  maintenance_window              = "Mon:00:00-Mon:03:00"
-  backup_window                   = "03:00-06:00"
-  enabled_cloudwatch_logs_exports = ["general"]
-
-  # Backups are required in order to create a replica
-  backup_retention_period = 1
-  skip_final_snapshot     = true
-  deletion_protection     = false
-
-  tags = {
-    Name        = "${var.vpc_name}-RDS-Master"
-    Environment = var.environment
-  }
 }
 
-module "replica" {
+module "aurora" {
 
-  source  = "terraform-aws-modules/rds/aws"
-  version = "5.1.0"
+  source  = "terraform-aws-modules/rds-aurora/aws"
+  version = "7.5.1"
 
-  identifier = "${var.app_name}-replica"
+  name           = "${var.app_name}-rds-cluster"
+  engine         = var.engine
+  engine_version = var.engine_version
+  instances = {
+    1 = {
+      instance_class      = var.instance_class
+      publicly_accessible = false
+    }
+    2 = {
+      identifier     = "${var.app_name}-rds-instance"
+      instance_class = var.instance_class
+    }
+  }
 
-  # Source database. For cross-region use db_instance_arn
-  replicate_source_db    = module.master.db_instance_id
-  create_random_password = false
-
-  engine               = var.engine
-  engine_version       = var.engine_version
-  family               = var.family
-  major_engine_version = var.major_engine_version
-  instance_class       = var.instance_class
-
-  allocated_storage     = var.allocated_storage
-  max_allocated_storage = var.max_allocated_storage
-
-  port = var.port
-
-  multi_az               = false
+  vpc_id                 = module.vpc.vpc_id
+  db_subnet_group_name   = aws_db_subnet_group.rds-subnet-group.name
+  create_db_subnet_group = false
+  create_security_group  = false
   vpc_security_group_ids = [aws_security_group.rds_security_group.id]
 
-  maintenance_window              = "Tue:00:00-Tue:03:00"
-  backup_window                   = "03:00-06:00"
-  enabled_cloudwatch_logs_exports = ["general"]
+  iam_database_authentication_enabled = true
+  create_random_password              = true
 
-  backup_retention_period = 0
-  skip_final_snapshot     = true
-  deletion_protection     = false
+  apply_immediately   = true
+  skip_final_snapshot = true
+
+  create_db_cluster_parameter_group      = true
+  db_cluster_parameter_group_name        = "${var.app_name}-rds-cluster-parameter-group"
+  db_cluster_parameter_group_family      = var.family
+  db_cluster_parameter_group_description = "${var.app_name} rds cluster parameter group"
+  db_cluster_parameter_group_parameters = [
+    {
+      name         = "connect_timeout"
+      value        = 120
+      apply_method = "immediate"
+      }, {
+      name         = "innodb_lock_wait_timeout"
+      value        = 300
+      apply_method = "immediate"
+      }, {
+      name         = "log_output"
+      value        = "FILE"
+      apply_method = "immediate"
+      }, {
+      name         = "max_allowed_packet"
+      value        = "67108864"
+      apply_method = "immediate"
+      }, {
+      name         = "aurora_parallel_query"
+      value        = "OFF"
+      apply_method = "pending-reboot"
+      }, {
+      name         = "binlog_format"
+      value        = "ROW"
+      apply_method = "pending-reboot"
+      }, {
+      name         = "log_bin_trust_function_creators"
+      value        = 1
+      apply_method = "immediate"
+      }, {
+      name         = "require_secure_transport"
+      value        = "ON"
+      apply_method = "immediate"
+      }, {
+      name         = "tls_version"
+      value        = "TLSv1.2"
+      apply_method = "pending-reboot"
+    }
+  ]
+
+  create_db_parameter_group      = true
+  db_parameter_group_name        = "${var.app_name}-rds-instance-parameter-group"
+  db_parameter_group_family      = var.family
+  db_parameter_group_description = "${var.app_name} rds instance parameter group"
+  db_parameter_group_parameters = [
+    {
+      name         = "connect_timeout"
+      value        = 60
+      apply_method = "immediate"
+      }, {
+      name         = "general_log"
+      value        = 0
+      apply_method = "immediate"
+      }, {
+      name         = "innodb_lock_wait_timeout"
+      value        = 300
+      apply_method = "immediate"
+      }, {
+      name         = "log_output"
+      value        = "FILE"
+      apply_method = "pending-reboot"
+      }, {
+      name         = "long_query_time"
+      value        = 5
+      apply_method = "immediate"
+      }, {
+      name         = "max_connections"
+      value        = 2000
+      apply_method = "immediate"
+      }, {
+      name         = "slow_query_log"
+      value        = 1
+      apply_method = "immediate"
+      }, {
+      name         = "log_bin_trust_function_creators"
+      value        = 1
+      apply_method = "immediate"
+    }
+  ]
+
+  enabled_cloudwatch_logs_exports = ["audit", "error", "general", "slowquery"]
+  security_group_use_name_prefix  = false
 
   tags = {
-    Name        = "${var.vpc_name}-RDS-Replica"
+    Name        = "${var.vpc_name}-RDS"
     Environment = var.environment
   }
 }
